@@ -1,0 +1,6 @@
+Flask
+Pillow
+scikit-learn
+numpy
+pandas
+flask-cors

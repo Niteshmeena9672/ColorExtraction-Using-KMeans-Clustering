@@ -5,15 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Color Extractor</title>
     <link rel="stylesheet" href="style.css">
+     <!-- Import Happy Monkey font from Google Fonts -->
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link href="https://fonts.googleapis.com/css2?family=Happy+Monkey&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>Color Extraction</h1>
+    <h1>Color Extraction using KNN</h1>
     <form id="upload-form">
-        <input type="file" id="image-upload" accept="image/*" required>
-        <button type="submit">Upload</button>
+        <div class="upload-container">
+            <input type="file" id="image-upload" accept="image/*" required>
+            <button type="submit">Upload</button>
+        </div>
+        <div class="palette-input-container">
+            <label for="palette-size-input">Number of Colors (1-10):</label>
+            <input type="number" id="palette-size-input" value="6" min="1" max="10">
+            <button id="update-palette-btn">Update Palette</button>
+        </div>
     </form>
-    <img id="uploaded-image" src="" alt="Uploaded Image" style="display: none;">
-    <div id="color-results"></div>
+    <div class="container">
+        <div id="uploaded-image-container">
+            <img id="uploaded-image" src="" alt="Uploaded Image" style="display: none;">
+            <!-- <p id="upload-image-txt2" style="display: none;">Uploaded image</p> -->
+        </div>
+        <div id="color-results">
+            <!-- <p id="extracted-color">Extracted colors:</p> -->
+        </div>
+        <p id="upload-image-txt">Upload an image to see the result</p>
+    </div>
+    <div id="footer-container">
+        <div id="footer-description">
+            <p>K-means clustering is a popular unsupervised machine learning algorithm used to partition data into k distinct clusters. In the context of image color extraction, the algorithm identifies the dominant colors in an image by clustering similar colors together. This method helps in reducing the number of colors in an image to a specified number of clusters, making it easier to identify and analyze the most prominent colors.</p>
+        </div>
+    </div>
     <script>
         document.getElementById('upload-form').addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -24,15 +48,58 @@
 
             // Display the uploaded image
             const uploadedImage = document.getElementById('uploaded-image');
+            const uploadImageTxt = document.getElementById('upload-image-txt');
+            const uploadImageTxt2 = document.getElementById('upload-image-txt2');
             const reader = new FileReader();
             reader.onload = (e) => {
                 uploadedImage.src = e.target.result;
                 uploadedImage.style.display = 'block';
+                uploadImageTxt.style.display = 'none';
+                uploadImageTxt2.style.display = 'block';
             };
             reader.readAsDataURL(file);
 
             try {
-                const response = await fetch('http://127.0.0.1:5000/upload', {
+                const paletteSize = document.getElementById('palette-size-input').value;
+                const response = await fetch(`http://127.0.0.1:5000/upload?palette_size=${paletteSize}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const colors = await response.json();
+                const resultsDiv = document.getElementById('color-results');
+                resultsDiv.innerHTML = '';
+                colors.forEach(color => {
+                    const colorDiv = document.createElement('div');
+                    colorDiv.style.backgroundColor = color;
+                    colorDiv.textContent = color;
+                    resultsDiv.appendChild(colorDiv);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        // Optional: Add functionality to update palette size dynamically
+        document.getElementById('update-palette-btn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('image-upload');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select an image first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const paletteSize = document.getElementById('palette-size-input').value;
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/upload?palette_size=${paletteSize}`, {
                     method: 'POST',
                     body: formData
                 });

@@ -38,8 +38,11 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
+    # Get the desired palette size from request parameters
+    palette_size = int(request.args.get('palette_size', 6))
+
     image = Image.open(io.BytesIO(file.read()))
-    colors = generate_palette(image, 6)
+    colors = generate_palette(image, palette_size)
     
     return jsonify(colors)
 
