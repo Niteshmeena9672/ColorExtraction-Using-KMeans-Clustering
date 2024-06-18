@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Color Extractor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Color Extraction</h1>
+    <form id="upload-form">
+        <input type="file" id="image-upload" accept="image/*" required>
+        <button type="submit">Upload</button>
+    </form>
+    <img id="uploaded-image" src="" alt="Uploaded Image" style="display: none;">
+    <div id="color-results"></div>
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const fileInput = document.getElementById('image-upload');
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // Display the uploaded image
+            const uploadedImage = document.getElementById('uploaded-image');
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedImage.src = e.target.result;
+                uploadedImage.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const colors = await response.json();
+                const resultsDiv = document.getElementById('color-results');
+                resultsDiv.innerHTML = '';
+                colors.forEach(color => {
+                    const colorDiv = document.createElement('div');
+                    colorDiv.style.backgroundColor = color;
+                    colorDiv.textContent = color;
+                    resultsDiv.appendChild(colorDiv);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
